@@ -72,17 +72,29 @@ class Polylang_to_qtranslate {
 	This is also a good time to configure the languages and permalink settings of qTranslate X.
 	<p>Test if your page still works after installation (menus and contents in all languages will be visible, just ignore that)
 
-    <div class='p2q-info'>Languages found in Polylang: <strong><?php echo join(" ", $this->get_polylang_languages()) ?></strong></div>
+  <div class='p2q-info'>Languages found in Polylang: <strong><?php echo join(", ", $this->get_polylang_languages()) ?></strong></div>
+
+  <div class='p2q-info'>Default language in Polylang: <strong><?php echo $this->get_polylang_default_language() ?></strong></div>
+
+  <div class='p2q-info'>Number of Polylang posts found: <strong><?php echo $this->get_polylang_post_count() ?></strong></div>
 
 	<div class='p2q-info'>Enabled languages in qTranslate: <strong>
 	<?php
 		if ( is_array($this->q_config['enabled_languages']) ) {
-			echo join(" ", $this->q_config['enabled_languages'] );
+			echo join(", ", $this->q_config['enabled_languages'] );
 		} else {
 			echo "<span class='p2q-error'>none</span>";
 		}
 	?>
 	</strong></div>
+
+  <div class='p2q-info'>Default language in qTranslate: <strong><?php echo $this->q_config["default_language"] ?></strong>
+	<?php
+		if ( $this->q_config['default_language'] != $this->get_polylang_default_language() ) {
+			echo "<span class='p2q-error'>Defaults not the same</span>";
+		}
+	?>
+  </div>
 
 	<div class='p2q-info'>qTranslate Slug detected: <strong><?php echo isset($this->qts) ? "YES" : "<span class='p2q-error'>NO</span>"; ?></strong></div>
 
@@ -130,6 +142,15 @@ class Polylang_to_qtranslate {
 		$this->ajax_data['warnings'][] = $warning;
 	}
 
+
+	//Debug to ajax data
+	function debug($debug) {
+		if (! isset ($this->ajax_data['debug']) )
+			$this->ajax_data['debug'] = array();
+
+		$this->ajax_data['debug'][] = $debug;
+	}
+
 	//Count ajax data
 	function count($name, $amount = 1) {
 		if (! isset ($this->ajax_data[$name]) )
@@ -160,19 +181,28 @@ class Polylang_to_qtranslate {
 		update_option( 'qtranslate_' . $option_name, $q_config[ $option_name ] );
 	}
 
-    /**
-     * Get array with all language codes in icl_translations table
-     */
-    function get_polylang_languages() {
-				$languages = get_terms('language', array('hide_empty' => false, 'orderby'=> 'term_group'));
-				$languages = empty($languages) || is_wp_error($languages) ? array() : $languages;
+  /**
+   * Get array with all language codes in term_taxonomy table
+   */
+  function get_polylang_languages() {
+    $query = "SELECT b.slug,b.name,a.description,a.count FROM " . $this->prefix('term_taxonomy') . " AS a LEFT JOIN " . $this->prefix('terms') . " as b ON a.term_id = b.term_id WHERE a.taxonomy = 'language'";
+    $rows = $this->db->get_results( $query );
 
-        $retval = array();
-        foreach ($languages as $k => $v) {
-            $retval[] = $v->slug;
-        }
-        return $retval;
+    $retval = array();
+    foreach ($rows as $k => $v) {
+        $retval[] = $v->slug;
     }
+    return $retval;
+  }
+
+  function get_polylang_default_language() {
+    $option = maybe_unserialize(get_option("polylang"));
+    return $option["default_lang"];;
+  }
+
+  function get_polylang_post_count() {
+    return $this->db->get_var( $this->db->prepare("SELECT count(*) FROM " . $this->prefix('term_taxonomy') . " WHERE taxonomy = 'post_translations'", null ) );
+  }
 
 	function init_objects() {
 		global $wpdb;
@@ -217,7 +247,7 @@ class Polylang_to_qtranslate {
 		$total_counter = getPost('total_counter', 0);
 		$start_id = getPost('last_translation_id', 0);
 
-		$query = $this->db->prepare("SELECT * FROM " . $this->prefix('icl_translations') . " WHERE source_language_code IS NULL AND NOT element_type LIKE %s AND translation_id > %d LIMIT %d", 'comment%', $start_id, $limit );
+		$query = $this->db->prepare("SELECT * FROM " . $this->prefix('term_taxonomy') . " WHERE taxonomy = 'post_translations' AND term_taxonomy_id > %d LIMIT %d", $start_id, $limit );
 		$rows = $this->db->get_results($query);
 
 		$n = 0;
@@ -230,11 +260,11 @@ class Polylang_to_qtranslate {
 
 			$this->translate_row($r);
 
-			$last_translation_id = $r->translation_id;
+			$last_translation_id = $r->term_taxonomy_id;
 			$n++;
 		}
 
-		$todo = $this->db->get_var( $this->db->prepare("SELECT count(*) FROM " . $this->prefix('icl_translations') . " WHERE source_language_code IS NULL AND NOT element_type LIKE %s AND translation_id > %d LIMIT %d", 'comment%', $last_translation_id, $limit ) );
+		$todo = $this->db->get_var( $this->db->prepare("SELECT count(*) FROM " . $this->prefix('term_taxonomy') . " WHERE taxonomy LIKE '%_translations' AND term_taxonomy_id > %d LIMIT %d", $last_translation_id, $limit ) );
 
 		$json = $this->ajax_data;
 
@@ -250,48 +280,48 @@ class Polylang_to_qtranslate {
 	}
 
 	function translate_row($r) {
-			$type = preg_split("/_/", $r->element_type, 2)[0];
+			$type = preg_split("/_/", $r->taxonomy, 2)[0];
 
-			$translation_map = $this->get_translation_map( $r->trid );
+			// $translation_map = $this->get_translation_map( $r->term_taxonomy_id );
 
 			switch ($type) {
 				case "comment":
 					//comments are not translated
 					break;
 				case "post":
-					$this->tr_post($r->element_id, $r->trid);
+					$this->tr_post($r->term_taxonomy_id, $r);
 					break;
-				case "tax":
-					$this->tr_taxonomy($r->element_id, $r->trid, $r->element_type);
+				case "term":
+          // taxonommies are not translated yet
+					// $this->tr_taxonomy($r->element_id, $r->trid, $r->element_type);
 					break;
 				default:
-					$this->warn( sprintf("Unknown taxonomy %s[%d], trid %d.", $r->element_type, $r->element_id, $r->trid) );
+					$this->warn( sprintf("Unknown element %s[%d], trid %d.", $r->taxonomy, $r->description, $r->term_taxonomy_id) );
 			}
 	}
 
 	function delete_translations($trid) {
-		$query =  $this->db->prepare("DELETE FROM " . $this->prefix('icl_translations') . " WHERE trid = %d", $trid);
+		$query =  $this->db->prepare("DELETE FROM " . $this->prefix('term_taxonomy') . " WHERE term_taxonomy_id = %d", $trid);
+		$this->db->query($query);
+		$query =  $this->db->prepare("DELETE FROM " . $this->prefix('terms') . " WHERE term_id = %d", $trid);
 		$this->db->query($query);
 	}
 
 	///Get element_ids for all translations
-	///The first item is the source item
+	///The first item is the source item     <--- I haven't checked this
 	/// array ( 'lang' : id, ... )
 	function get_translation_map($trid, $exclude_source = false) {
-		$query = "SELECT language_code, element_id, element_type from " . $this->prefix('icl_translations') . " WHERE trid=%d";
-		if ($exclude_source) $query .= " AND source_language_code IS NOT NULL";
-		$query .= " ORDER BY source_language_code IS NOT NULL";
+		$query = "SELECT description FROM " . $this->prefix('term_taxonomy') . " WHERE term_taxonomy_id = %d";
 
 		$rows = $this->db->get_results(  $this->db->prepare($query, $trid)  );
 
-		$retval = array();
-		foreach ($rows as $row) {
-			if ($row->language_code == "") {
-				$this->warn( sprintf( "Language_code missing for %s[%d], trid %d.", $row->element_type, $row->element_id, $trid ) );
-			} else
-				$retval[ $row->language_code ] = $row->element_id;
-		}
-		return $retval;
+    if(count($rows) < 1) return array();
+
+    $map = maybe_unserialize($rows[0]);
+
+    if(!is_array($map)) return array();
+
+		return $map;
 	}
 
 	///Get element_ids for all children
@@ -363,7 +393,7 @@ class Polylang_to_qtranslate {
 	//$columns can be a single column-name or an array.
 	function translate_element($element_id, $translation_map, $table, $id_col, $columns) {
 		if (count($translation_map) < 1) {
-			// echo "nothing to do.<br>";
+			$this->debug($element_id." nothing to do.");
 			return;
 		}
 
@@ -432,12 +462,27 @@ class Polylang_to_qtranslate {
 		}
 	}
 
-	function tr_post($source_element_id, $trid) {
-		$translation_map = $this->get_translation_map($trid);
+	function tr_post($trid, $row) {
+    if(is_object($row)){
+      $translation_map = maybe_unserialize($row->description);
+    }
 
-		//Slugs for qts
-		if (isset($this->qts))
-			$this->translate_post_slugs_for_qts($source_element_id, $translation_map);
+    if(!is_array($translation_map)) {
+	    $translation_map = $this->get_translation_map($trid);
+    }
+
+    $default_lang = $this->q_config["default_language"];
+    if(isset($translation_map[$default_lang])){
+      $source_element_id = $translation_map[$default_lang];
+    }
+    else {
+      // Get first language listed in map and treat that as the default
+      $source_element_id = reset($translation_map);
+    }
+
+		// //Slugs for qts
+		// if (isset($this->qts))
+		// 	$this->translate_post_slugs_for_qts($source_element_id, $translation_map);
 
 		$this->translate_element($source_element_id, $translation_map, $this->db->posts, 'id', array('post_content', 'post_title', 'post_excerpt') );
 		foreach ($translation_map as $lang => $post_id) {
@@ -482,7 +527,7 @@ $polylang_to_qtranslate = new Polylang_to_qtranslate();
  * Add donate-link to plugin page
  */
 if ( ! function_exists( 'polylang_to_qtranslate_plugin_meta' ) ) {
-	function polyllang_to_qtranslate_plugin_meta( $links, $file ) {
+	function polylang_to_qtranslate_plugin_meta( $links, $file ) {
 		if ( strpos( $file, 'polylang-to-qtranslate-x.php' ) !== false ) {
 			$links = array_merge( $links, array( '<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=5T9XQBCS2QHRY&lc=NL&item_name=Jos%20Koenis&item_number=wordpress%2dplugin&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted" title="Support the development">Donate</a>' ) );
 		}

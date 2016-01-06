@@ -63,10 +63,10 @@ class P2q {
 		$text = '';
 		foreach($texts as $lang => $lang_text) {
 			if(empty($lang_text)) continue;
-			$text .= '<!--:'.$lang.'-->'.$lang_text.'<!--:-->';
+			$text .= '[:'.$lang.']'.$lang_text;
 		}
 
-		return $text;
+		return $text."[:]";
 	}
 
 }
