@@ -1,6 +1,6 @@
 <?php
 
-class W2q {
+class P2q {
 	// split text at all language comments and quick tags
 	static function qtranxf_get_language_blocks($text) {
 		$split_regex = "#(<!--:[a-z]{2}-->|<!--:-->|\[:[a-z]{2}\])#ism";
@@ -50,7 +50,7 @@ class W2q {
 				$result[$default_language] = $result['default'];
 			unset($result['default']);
 		}
-		
+
 		return $result;
 	}
 

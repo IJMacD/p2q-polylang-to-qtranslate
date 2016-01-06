@@ -1,18 +1,18 @@
 === Plugin Name ===
-Contributors: josk79
+Contributors: ijmacd, josk79
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=5T9XQBCS2QHRY&lc=NL&item_name=Jos%20Koenis&item_number=wordpress%2dplugin&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted
-Tags: qtranslate, mqtranslate, wpml
+Tags: qtranslate, mqtranslate, polylang
 Requires at least: 4.0.0
-Tested up to: 4.1.1
-Stable tag: 0.9.3
+Tested up to: 4.4
+Stable tag: 0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-W2Q: WPML to qTranslate
+P2Q: Polylang to qTranslate
 
 == Description ==
 
-Migrates WPML translations to qTranslate. 
+Migrates Polylang translations to qTranslate.
 
 Compatible with:
 [qTranslate X](https://wordpress.org/plugins/qtranslate-x/),
@@ -22,21 +22,23 @@ Compatible with:
 
 Might be compatible with other qTranslate forks and helper-plugins as well, but not tested.
 
-Goodbye WPML, Hello qTranslate!
+Goodbye Polylang, Hello qTranslate!
 
 Note: This plugin will save you a lot of work, but more configuration and tweaking might be necessary.
+
+Note 2: This plugin is a clone of W2Q: WPML to qTranslate with appropriate modifications. (Donation links are the original author's, not mine)
 
 == Installation ==
 
 1. Upload the plugin in the `/wp-content/plugins/` directory, or automatically install it through the 'New Plugin' menu in WordPress
 2. Activate the plugin through the 'Plugins' menu in WordPress
 
-= WPML to qTranslate Migration =
+= Polylang to qTranslate Migration =
 
 1. Create a non-production environment to perform the migration. Make sure you have a backup if you want to migrate the production environment.
-2. Disable WPML
+2. Disable Polylang
 3. Install and configure qTranslate X (or any other fork). Test if your environment is still ok.
-4. Go to Settings - W2Q: WPML to qTranslate and press 'Execute'
+4. Go to Settings - P2Q: Polylang to qTranslate and press 'Execute'
 5. Wait...
 6. Test your environment. Some tweaks might be required.
 7. Make a [donation](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=5T9XQBCS2QHRY&lc=NL&item_name=Jos%20Koenis&item_number=wordpress%2dplugin&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted). Greatly appreciated!
@@ -45,15 +47,15 @@ Note: This plugin will save you a lot of work, but more configuration and tweaki
 
 = How does it work =
 
-The plugin walks through all source elements from the wp_icl_translations table (source element is the element in the 'original language'). 
-if the element is a post (post_*) or a taxonomy (tax_*) it will be migrated:
-The translations for the element will be merged with the source element. 
-If the element is a post, any comments for the post will also be attached to the source element.
-Once merged, the translation posts/taxonomies will be removed from the database.
+The plugin walks through translation entries in the wp_term_taxonomy table.
+If the element is a post (post_translations) it will be migrated:
+The translations for the element will be merged into the element in the default language.
+If the element is a post, any comments for the post will also be attached to the new sole element.
+Once merged, the translation posts will be removed from the database.
 
 = Will it migrate strings translations? =
 
-No. Only posts, taxonomies and terms will be migrated. 
+No. Only posts will be migrated.
 
 = Will all my URLs stay the same? =
 
@@ -63,14 +65,9 @@ No, slugs are not migrated by default. Some urls will break. If the 'qTranslate 
 
 Sure! [This](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=5T9XQBCS2QHRY&lc=NL&item_name=Jos%20Koenis&item_number=wordpress%2dplugin&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted) is the link. Greatly appreciated!
 
+Like I mentioned earlier, I am just piggybacking on the work of the original author of the W2Q plugin so I have left his donation link intact.
+
 == Changelog ==
 
-= 0.9.3 =
-* FIX: Save terms in wp_option 'qtranslate_term_name' instead of using language tags
-
-= 0.9.2 =
-* Added some documentation and urls to the referred plugins in the admin interface
-
-= 0.9.1 =
-* First public version
-
+= 0.1 =
+* First public version - Cloned from W2Q: WPML to qTranslate 0.9.3
