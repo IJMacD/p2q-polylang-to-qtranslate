@@ -27,7 +27,7 @@ Goodbye Polylang, Hello qTranslate!
 
 Note: This plugin will save you a lot of work, but more configuration and tweaking might be necessary.
 
-Note 2: This plugin is a clone of W2Q: WPML to qTranslate with appropriate modifications. (Donation links are the original author's, not mine)
+Note 2: This plugin is a clone of [W2Q: WPML to qTranslate](https://wordpress.org/plugins/w2q-wpml-to-qtranslate/) with appropriate modifications. (Donation links are still the original author's, not mine)
 
 ## Installation
 
@@ -71,4 +71,4 @@ _Like I mentioned earlier, I am just piggybacking on the work of the original au
 ## Changelog
 
 ### 0.1
-* First public version - Forked from W2Q: WPML to qTranslate 0.9.3
+* First public version - Forked from [W2Q: WPML to qTranslate 0.9.3](http://plugins.svn.wordpress.org/w2q-wpml-to-qtranslate/tags/0.9.3/)
