@@ -280,7 +280,8 @@ class Polylang_to_qtranslate {
 	}
 
 	function translate_row($r) {
-			$type = preg_split("/_/", $r->taxonomy, 2)[0];
+			$_type = preg_split("/_/", $r->taxonomy, 2);
+      $type = $_type[0];
 
 			// $translation_map = $this->get_translation_map( $r->term_taxonomy_id );
 
