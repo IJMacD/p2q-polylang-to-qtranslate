@@ -32,11 +32,11 @@ class Polylang_to_qtranslate {
 	}
 
 	public function action_admin_menu() {
-		add_options_page( 'P2Q: Polylang to qTranslate options', 'P2Q: Polylang to qTranslate', 'install_plugins', 'p2q-polylang-to-qtranslate', array( &$this, 'admin_page') );
+		add_options_page( 'P2Q: Polylang to qTranslate options', 'P2Q: Polylang to qTranslate', 'manage_options', 'p2q-polylang-to-qtranslate', array( &$this, 'admin_page') );
 	}
 
 	function admin_page() {
-		if ( !current_user_can( 'install_plugins' ) )  {
+		if ( !current_user_can( 'manage_options' ) )  {
 			wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
 		}
 		$this->init_objects();
@@ -223,7 +223,7 @@ class Polylang_to_qtranslate {
 
 	//Execute the magic
 	function ajax_execute() {
-		if (!wp_verify_nonce( $_POST['p2q_nonce'], 'p2q_execute' ) || !current_user_can( 'install_plugins' ) )
+		if (!wp_verify_nonce( $_POST['p2q_nonce'], 'p2q_execute' ) || !current_user_can( 'manage_options' ) )
 			die (json_encode(array('fatal' => 'Security failure', 'data' => $_POST)));
 
 		if ( $this->is_polylang_enabled() ) {
